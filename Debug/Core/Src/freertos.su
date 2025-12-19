@@ -1,0 +1,5 @@
+../Core/Src/freertos.c:106:6:MX_FREERTOS_Init	8	static
+../Core/Src/freertos.c:165:6:Sensor_AS5600	16	static
+../Core/Src/freertos.c:184:6:Task_check_sethome	16	static
+../Core/Src/freertos.c:203:6:Dwin_Task	16	static
+../Core/Src/freertos.c:222:6:TASK_DMA_ENTRY	16	static

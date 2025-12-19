@@ -1,0 +1,14 @@
+D:/DO_AN_ROBOT/codev2/v3/Libraries/STEP_MOTOR/STEP.h:37:14:void STEP::write_pin(GPIO_TypeDef*, uint8_t, bool)	2
+D:/DO_AN_ROBOT/codev2/v3/Libraries/STEP_MOTOR/STEP.h:42:14:void STEP::update_Resolution()	1
+D:/DO_AN_ROBOT/codev2/v3/Libraries/STEP_MOTOR/STEP.h:73:2:STEP::STEP(uint8_t, uint8_t, uint8_t, uint8_t, GPIO_TypeDef*, uint8_t, GPIO_TypeDef*, uint8_t, GPIO_TypeDef*, uint16_t, GPIO_TypeDef*, uint16_t, GPIO_TypeDef*)	1
+../Core/Src/alt_main.cpp:67:6:void pos_state_to_array(uint64_t, uint8_t*)	2
+../Core/Src/alt_main.cpp:79:6:void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef*, uint16_t)	2
+../Core/Src/alt_main.cpp:111:6:void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef*)	7
+../Core/Src/alt_main.cpp:147:6:void readAS5600_DMA()	4
+../Core/Src/alt_main.cpp:170:6:void Sensor_AS5600_RTOS()	1
+../Core/Src/alt_main.cpp:184:6:void Sethome_Step_RTOS()	14
+../Core/Src/alt_main.cpp:215:6:void HAL_UART_TxCpltCallback(UART_HandleTypeDef*)	3
+../Core/Src/alt_main.cpp:229:6:void DwinUsartTask_RTOS()	2
+../Core/Src/alt_main.cpp:250:6:void Dwin_RTOS()	5
+../Core/Src/alt_main.cpp:290:6:void TIM2_CALLBACK_STEP()	5
+../Core/Src/alt_main.cpp:314:5:int alt_main()	1

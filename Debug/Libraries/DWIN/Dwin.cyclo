@@ -1,0 +1,6 @@
+../Libraries/DWIN/Dwin.cpp:17:1:DwinDgus::DwinDgus(UART_HandleTypeDef*, DMA_HandleTypeDef*)	1
+../Libraries/DWIN/Dwin.cpp:31:6:void DwinDgus::set_pos_from_value(uint16_t, uint16_t)	3
+../Libraries/DWIN/Dwin.cpp:44:6:void DwinDgus::CMD_READ_Func()	6
+../Libraries/DWIN/Dwin.cpp:64:6:void DwinDgus::handled_data_interrupt()	5
+../Libraries/DWIN/Dwin.cpp:77:6:void DwinDgus::beepHMI()	1
+../Libraries/DWIN/Dwin.cpp:90:6:void DwinDgus::setVP(uint16_t, uint16_t)	1
