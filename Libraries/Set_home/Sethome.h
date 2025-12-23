@@ -41,13 +41,14 @@ typedef struct {
 
 typedef enum {
     ROBOT_SETHOME = 0,   // Robot đang về vị trí gốc (home)
-    ROBOT_ACTIVE  = 1    // Robot di chuyển các khớp để hút vật
+    ROBOT_ACTIVE  = 1,    // Robot di chuyển các khớp để hút vật
+	ROBOT_IDLE=2
 } Robot_State_t;
 
 
 
 //flag=1 đang chạm sethome
-extern flag_sethome_t _Flag;
+extern volatile flag_sethome_t _Flag;
 
 
 // Hàm xử lý

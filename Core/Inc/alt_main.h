@@ -20,9 +20,10 @@ int alt_main();
 
 //RTOS
 void Sensor_AS5600_RTOS(void);
-void Sethome_Step_RTOS(void);
+
 void Dwin_RTOS(void);
 void DwinUsartTask_RTOS(void);
+void Control_motor_RTOS(void);
 
 //TIM
 void TIM2_CALLBACK_STEP(void);

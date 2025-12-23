@@ -30,6 +30,56 @@ struct Resolution {
     unsigned char :1;
 };
 
+typedef enum
+{
+
+    STEP_RUNNING_1,       // DK LAN 1 (OPEN LOOP)
+	STEP_RUNNING_2,		//DK LAN 2 (SD AS5600)
+    STEP_DONE,          // Step hoàn thành
+//    STEP_ERROR          // Step gặp lỗi
+} StepState_t;
+
+
+typedef enum{
+	STEP_SETHOME,
+	STEP_DUONG,
+	STEP_AM,
+	STEP_CLOSED, // khi dieu khien closed loop thi khong cong current step
+}Chieuquay_state_t;
+
+typedef struct
+{
+	/*Angle */
+
+	int32_t angle_as56_init;
+	int32_t angle_as56_cal; //bien khoi tao de luu diem 0_
+	int32_t angle_as56_last;
+	int32_t angle_as56_cur; //bien luu giu da quay bao nhieu goc
+	int32_t angle_as56_tar;//so goc can quay
+	int32_t angle_kc_candat;
+
+    /* Encoder */
+
+    int32_t angle_cur; //goc hien tai
+    int32_t angle_tar;//goc mong muon
+
+    /* Step */
+    int32_t target_step;
+    int32_t current_step;
+
+    Chieuquay_state_t Chieuquayhientai;
+
+
+} STEP_Handle_t;
+
+typedef struct {
+	//CAC CO KHOI TAO 1 LAN
+	bool flag_angle_init; // khoi tao de luu gia tri ban dau cua goc dau tien (angle_init)
+	bool flag_trang_thaidau_vehome; //KHI CHAM VAO HOME THI CONG THEM KHOANG DE VE VI TRI 0
+	bool flag_set_dir;//SET DIR DE CHON CHIEU 1 LAN
+
+}FLAG_STEPx_Handle_t;
+
 class STEP {
 private :
 	Resolution x;
@@ -39,35 +89,19 @@ private :
 	    port->BSRR = val ? (1U << pin) : (1U << (pin + 16));
 	}
 
-	inline void update_Resolution()
-	{
-	    write_pin(ports[0], x.P0, x.M0);
-	    write_pin(ports[1], x.P1, x.M1);
-	    write_pin(ports[2], x.P2, x.M2);
-	}
+
 	GPIO_TypeDef* _step_port;
 	uint16_t _step_pin;
 	GPIO_TypeDef* _dir_port;
 	uint16_t _dir_pin;
+	FLAG_STEPx_Handle_t Flags;
+	STEP_Handle_t STEPx;
+	bool dir_Stepx;
+	bool dir_AS;
 
 
-	uint32_t angle_init=0;
-	uint32_t angle_target=0;
-	uint32_t angle_current=0;
-
-private:
-    void update_ISR();
-    volatile uint32_t step_period_us;
-    volatile uint32_t step_timer;
-    volatile bool step_state;
-    volatile uint32_t position_count=0;
-public:
-    friend void TIM2_CALLBACK_STEP();
-    friend void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c);
-    void setStepPeriod(uint32_t period);
-    uint32_t getPosition();
-    friend void Sensor_AS5600_RTOS();
-
+	bool Flag_step_oke;
+	StepState_t Status_Step;
 
 public:
 	STEP(uint8_t M0, uint8_t M1, uint8_t M2,
@@ -91,8 +125,62 @@ public:
         ports[1] = port1;
         ports[2] = port2;
 
-        update_Resolution();
+        Flags.flag_angle_init=false;
+        Flags.flag_set_dir=false;
+        Flags.flag_trang_thaidau_vehome=false;
+
+        STEPx.target_step=0;
+        STEPx.current_step=0;
+
+        STEPx.angle_as56_cur=0;
+        STEPx.angle_as56_tar=0;
+
+
+
+        Flag_step_oke=false;
+
+        Status_Step=STEP_DONE;
+
+	    write_pin(ports[0], x.P0, x.M0);
+	    write_pin(ports[1], x.P1, x.M1);
+	    write_pin(ports[2], x.P2, x.M2);
     }
+
+
+private:
+
+    void update_ISR();
+    volatile uint32_t step_timer;
+    volatile bool step_state;
+
+    volatile bool is_enable_step=false;
+
+    uint8_t remain;
+
+public:
+
+	 void update_As5600_cur(int32_t value);
+	 void STEP_Process();
+
+	 void dir_step(uint8_t dir);
+	 uint32_t getPosition();
+
+
+	 friend void TIM2_CALLBACK_STEP();
+	 friend void Control_motor_RTOS();
+
+	 void STEP_set_Target(uint8_t a); // set target
+
+	 void STEP_set_cal(uint16_t a,bool dir,bool dir_As); //chon diem 0 va chon chieu true (set) chieu cua encoder (false) -
+	 void STEP_set_home_trigger(void);
+	 void set_enable_step(bool val);
+
+	 int i=0;
+	//SET TOC DO QUAY STEP DUA VAO HAM ISR
+private:
+	uint32_t step_period_us;
+public:
+	void setStepPeriod(uint32_t period);
 };
 
 

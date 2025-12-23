@@ -13,7 +13,7 @@
 #define SET_HOME_COUNT 4
 
 
-flag_sethome_t _Flag;
+volatile flag_sethome_t _Flag;
 
 SetHome SetHomeArr[SET_HOME_COUNT] = {
     { GPIOE, GPIOE, 5, 4},   // STEP 1
@@ -37,11 +37,15 @@ void Home_Update_All(void)
             case 3: _Flag.flag4 = status; break;
         }
 
-        // Update output tương ứng (VD: bật/tắt LED)
-        if (status)
-            SetHomeArr[i].port_output->ODR &= ~(1 << SetHomeArr[i].pin_output); // set pin
-        else
-            SetHomeArr[i].port_output->ODR |= (1 << SetHomeArr[i].pin_output);
+        if (status) {
+            // RESET pin (LOW)
+            SetHomeArr[i].port_output->BSRR =
+                (1U << (SetHomeArr[i].pin_output + 16));
+        } else {
+            // SET pin (HIGH)
+            SetHomeArr[i].port_output->BSRR =
+                (1U << SetHomeArr[i].pin_output);
+        }
     }
 }
 

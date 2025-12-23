@@ -54,13 +54,6 @@ const osThreadAttr_t Sensor_Task_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for myTask02 */
-osThreadId_t myTask02Handle;
-const osThreadAttr_t myTask02_attributes = {
-  .name = "myTask02",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for TaskHmi */
 osThreadId_t TaskHmiHandle;
 const osThreadAttr_t TaskHmi_attributes = {
@@ -74,6 +67,13 @@ const osThreadAttr_t Task_DMA_HMI_attributes = {
   .name = "Task_DMA_HMI",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
+};
+/* Definitions for Task_controlmot */
+osThreadId_t Task_controlmotHandle;
+const osThreadAttr_t Task_controlmot_attributes = {
+  .name = "Task_controlmot",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal1,
 };
 /* Definitions for Queue_DWIN */
 osMessageQueueId_t Queue_DWINHandle;
@@ -92,9 +92,9 @@ const osSemaphoreAttr_t Seme_Tx_dwin_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void Sensor_AS5600(void *argument);
-void Task_check_sethome(void *argument);
 void Dwin_Task(void *argument);
 void TASK_DMA_ENTRY(void *argument);
+void StartTask05(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -136,14 +136,14 @@ void MX_FREERTOS_Init(void) {
   /* creation of Sensor_Task */
   Sensor_TaskHandle = osThreadNew(Sensor_AS5600, NULL, &Sensor_Task_attributes);
 
-  /* creation of myTask02 */
-  myTask02Handle = osThreadNew(Task_check_sethome, NULL, &myTask02_attributes);
-
   /* creation of TaskHmi */
   TaskHmiHandle = osThreadNew(Dwin_Task, NULL, &TaskHmi_attributes);
 
   /* creation of Task_DMA_HMI */
   Task_DMA_HMIHandle = osThreadNew(TASK_DMA_ENTRY, NULL, &Task_DMA_HMI_attributes);
+
+  /* creation of Task_controlmot */
+  Task_controlmotHandle = osThreadNew(StartTask05, NULL, &Task_controlmot_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -172,25 +172,6 @@ void Sensor_AS5600(void *argument)
 //    osDelay(1);
 //  }
   /* USER CODE END Sensor_AS5600 */
-}
-
-/* USER CODE BEGIN Header_Task_check_sethome */
-/**
-* @brief Function implementing the myTask02 thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Task_check_sethome */
-void Task_check_sethome(void *argument)
-{
-  /* USER CODE BEGIN Task_check_sethome */
-	Sethome_Step_RTOS();
-  /* Infinite loop */
-//  for(;;)
-//  {
-//    osDelay(1);
-//  }
-  /* USER CODE END Task_check_sethome */
 }
 
 /* USER CODE BEGIN Header_Dwin_Task */
@@ -229,6 +210,25 @@ void TASK_DMA_ENTRY(void *argument)
 //    osDelay(1);
 //  }
   /* USER CODE END TASK_DMA_ENTRY */
+}
+
+/* USER CODE BEGIN Header_StartTask05 */
+/**
+* @brief Function implementing the Task_controlmot thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTask05 */
+void StartTask05(void *argument)
+{
+  /* USER CODE BEGIN StartTask05 */
+  /* Infinite loop */
+	Control_motor_RTOS();
+//  for(;;)
+//  {
+//    osDelay(1);
+//  }
+  /* USER CODE END StartTask05 */
 }
 
 /* Private application code --------------------------------------------------*/
