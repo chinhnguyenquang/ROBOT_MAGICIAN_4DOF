@@ -41,6 +41,7 @@ extern TIM_HandleTypeDef htim4;
 extern osMessageQueueId_t Queue_DWINHandle;
 extern osThreadId_t Task_DMA_HMIHandle;
 extern osSemaphoreId_t Seme_Tx_dwinHandle;
+extern osSemaphoreId_t Theta_xyzHandle;;
 
 
 extern volatile flag_sethome_t _Flag;
@@ -48,7 +49,7 @@ extern volatile flag_sethome_t _Flag;
 Robot_State_t _Robot_state;
 
 
-
+RobotTheta_t *Angle_4_theta=nullptr;
 
 uint8_t data[64];
 
@@ -59,6 +60,8 @@ DwinDgus* _Dwin = nullptr;
 STEP * _STEP1=nullptr;
 STEP* _STEP2=nullptr;
 STEP* _STEP3=nullptr;
+
+bool Set_dir_sethome;
 
 uint64_t pos_e=0;
 
@@ -116,71 +119,84 @@ uint32_t raw[3];
 uint8_t flag_init_step=0;
 
 
-int32_t hello=0;
-
-void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
-
-    if (hi2c->Instance == I2C1) {
-        raw[0] = (((uint16_t)data_i2c1[0] << 8) | data_i2c1[1]) & 0x0FFF;
-        _STEP3->update_As5600_cur(raw[0]);
-
-    }
-    else if (hi2c->Instance == I2C2) {
-        raw[1] = (((uint16_t)data_i2c2[0] << 8) | data_i2c2[1]) & 0x0FFF;
-        _STEP1->update_As5600_cur(raw[1]);
 
 
-    }
-    else if (hi2c->Instance == I2C3) {
-        raw[2] = (((uint16_t)data_i2c3[0] << 8) | data_i2c3[1]) & 0x0FFF;
-        _STEP2->update_As5600_cur(raw[2]);
-        if (flag_init_step==0){
-        	hello=raw[2]; flag_init_step=1;
-        }
-
-    }
-}
+uint16_t yyy[3];
 
 
 #define AS5600_ADDR 0x36  // I2C address sensor
 
 
-
-
-
-
-void readAS5600_DMA() {
-    uint8_t reg = 0x0C;
-
-    if (hi2c1.State == HAL_I2C_STATE_READY) {
-        HAL_I2C_Master_Transmit(&hi2c1, AS5600_ADDR<<1, &reg, 1, 30);
-        HAL_I2C_Master_Receive_DMA(&hi2c1, AS5600_ADDR<<1, data_i2c1, 2);
-    }
-
-    if (hi2c2.State == HAL_I2C_STATE_READY) {
-        HAL_I2C_Master_Transmit(&hi2c2, AS5600_ADDR<<1, &reg, 1, 30);
-        HAL_I2C_Master_Receive_DMA(&hi2c2, AS5600_ADDR<<1, data_i2c2, 2);
-    }
-
-    if (hi2c3.State == HAL_I2C_STATE_READY) {
-        HAL_I2C_Master_Transmit(&hi2c3, AS5600_ADDR<<1, &reg, 1, 30);
-        HAL_I2C_Master_Receive_DMA(&hi2c3, AS5600_ADDR<<1, data_i2c3, 2);
-    }
+static void I2C_BusRecover(I2C_HandleTypeDef *hi2c)
+{
+    HAL_I2C_DeInit(hi2c);
+    osDelay(2);
+    HAL_I2C_Init(hi2c);
 }
 
 
-uint8_t buffer_rs485[16];
+void Sensor_AS5600_RTOS()
+{
+    uint16_t val1 = 0, val2 = 0, val3 = 0;
 
+    for (;;)
+    {
+        /* ========= I2C1 ========= */
+        if (HAL_I2C_Mem_Read(&hi2c1,
+                             AS5600_ADDR << 1,
+                             0x0C,
+                             I2C_MEMADD_SIZE_8BIT,
+                             data_i2c1,
+                             2,
+                             10) == HAL_OK)
+        {
+            val1 = ((data_i2c1[0] << 8) | data_i2c1[1]) & 0x0FFF;
+            _STEP3->update_As5600_cur(val1);
+            yyy[0] = val1;
+        }
+        else
+        {
+            I2C_BusRecover(&hi2c1);
+        }
 
-void Sensor_AS5600_RTOS(){
+        /* ========= I2C2 ========= */
+        if (HAL_I2C_Mem_Read(&hi2c2,
+                             AS5600_ADDR << 1,
+                             0x0C,
+                             I2C_MEMADD_SIZE_8BIT,
+                             data_i2c2,
+                             2,
+                             10) == HAL_OK)
+        {
+            val2 = ((data_i2c2[0] << 8) | data_i2c2[1]) & 0x0FFF;
+            _STEP1->update_As5600_cur(val2);
+            yyy[1] = val2;
+        }
+        else
+        {
+            I2C_BusRecover(&hi2c2);
+        }
 
+        /* ========= I2C3 ========= */
+        if (HAL_I2C_Mem_Read(&hi2c3,
+                             AS5600_ADDR << 1,
+                             0x0C,
+                             I2C_MEMADD_SIZE_8BIT,
+                             data_i2c3,
+                             2,
+                             10) == HAL_OK)
+        {
+            val3 = ((data_i2c3[0] << 8) | data_i2c3[1]) & 0x0FFF;
+            _STEP2->update_As5600_cur(val3);
+            yyy[2] = val3;
+        }
+        else
+        {
+            I2C_BusRecover(&hi2c3);
+        }
 
-	for(;;)
-	  {
-
-		readAS5600_DMA();
-		 osDelay(5);
-	  }
+        osDelay(5);
+    }
 }
 
 
@@ -203,6 +219,71 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 
 
+void Update_Theta_Robot(uint8_t req){
+	Angle_4_theta=Robot_GetTheta(req);
+}
+uint16_t yui=0;
+uint16_t theta[4];
+void Control_Dwin_get_theta_RTOS(void){
+
+	uint8_t bien_co_set_theta=0;
+
+    for (;;)
+    {
+    	if(Angle_4_theta != nullptr){
+    		if (bien_co_set_theta==0){
+    				_Robot_state=ROBOT_ACTIVE;
+    				_STEP1->STEP_set_Target(Angle_4_theta->theta1);
+    				_STEP2->STEP_set_Target(Angle_4_theta->theta2);
+    				_STEP3->STEP_set_Target(Angle_4_theta->theta3);
+    				theta[0]=Angle_4_theta->theta1;
+    				theta[1]=Angle_4_theta->theta2;
+    				theta[2]=Angle_4_theta->theta3;
+    				theta[3]=Angle_4_theta->theta4;
+    				yui=5;
+    				bien_co_set_theta=1;
+    				osDelay(3000);
+    		}
+    		if(bien_co_set_theta==1){
+    			//
+    			if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+    				osDelay(3000);
+    				_STEP1->STEP_set_Target(90); // GIONG NHU QUI HOACH QUI DAO
+    				_STEP2->STEP_set_Target(0);
+    				_STEP3->STEP_set_Target(0);
+    				theta[0]=Angle_4_theta->theta1;
+    				theta[1]=Angle_4_theta->theta2;
+    				theta[2]=Angle_4_theta->theta3;
+    				theta[3]=Angle_4_theta->theta4;
+    				yui=6;
+
+    				bien_co_set_theta=2;
+    			}
+    		}
+    		if(bien_co_set_theta==2){
+    			if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+    				bien_co_set_theta=3;
+    			}
+
+    		}
+    		if(bien_co_set_theta==3){
+    			if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+    				Angle_4_theta=nullptr;
+    				bien_co_set_theta=0;
+    				yui=10;
+    				osSemaphoreRelease(Theta_xyzHandle);
+    			}
+
+    		}
+    	}
+
+
+        osDelay(20);
+    }
+}
+
+
+
 
 void DwinUsartTask_RTOS(){
 	uint8_t req;
@@ -212,18 +293,35 @@ void DwinUsartTask_RTOS(){
 
 	    osSemaphoreAcquire(Seme_Tx_dwinHandle, osWaitForever); // <-- chặn trước khi gửi
 
-	    if (req != 255){
+	    if ((req != 255)&&(req >= 0)){
 	        uint16_t add=0x1000+(uint16_t)req*4;
+	        Update_Theta_Robot(req);
+	        osSemaphoreAcquire(Theta_xyzHandle, osWaitForever);
 	        _Dwin->setVP(add,0); // gọi DMA sau khi đã "chiếm" semaphore
 	    }
 	    else {
 	        _Dwin->beepHMI();
+	        _Robot_state=ROBOT_SETHOME;
+	        Set_dir_sethome=false;
+//	        ++yy;
+//	        if (yy==1){
+//		        _Robot_state=ROBOT_ACTIVE;
+//		        _STEP1->STEP_set_Target(90);
+//		        _STEP2->STEP_set_Target(30);
+//		        _STEP3->STEP_set_Target(30);
+//	        }
+//	        else if (yy == 2){
+//		        _STEP1->STEP_set_Target(45);
+//		        _STEP2->STEP_set_Target(30);
+//		        _STEP3->STEP_set_Target(30);
+//	        }
+//	        else if (yy==3){
+//		        _STEP1->STEP_set_Target(90);
+//		        _STEP2->STEP_set_Target(20);
+//		        _STEP3->STEP_set_Target(20);
+//	        }
 
 
-	        _Robot_state=ROBOT_ACTIVE;
-	        _STEP1->STEP_set_Target(90);
-	        _STEP2->STEP_set_Target(45);
-	        _STEP3->STEP_set_Target(35);
 	    }
 	}
 }
@@ -301,7 +399,7 @@ void TIM2_CALLBACK_STEP(void)
 
 int32_t mang1[10],mang2[10],mang3[10];
 
-bool Set_dir_sethome;
+
 
 void Control_motor_RTOS(){
 	for (;;)

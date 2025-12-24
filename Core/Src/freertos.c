@@ -75,6 +75,13 @@ const osThreadAttr_t Task_controlmot_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal1,
 };
+/* Definitions for Task_Dwin_get_t */
+osThreadId_t Task_Dwin_get_tHandle;
+const osThreadAttr_t Task_Dwin_get_t_attributes = {
+  .name = "Task_Dwin_get_t",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal2,
+};
 /* Definitions for Queue_DWIN */
 osMessageQueueId_t Queue_DWINHandle;
 const osMessageQueueAttr_t Queue_DWIN_attributes = {
@@ -84,6 +91,11 @@ const osMessageQueueAttr_t Queue_DWIN_attributes = {
 osSemaphoreId_t Seme_Tx_dwinHandle;
 const osSemaphoreAttr_t Seme_Tx_dwin_attributes = {
   .name = "Seme_Tx_dwin"
+};
+/* Definitions for Theta_xyz */
+osSemaphoreId_t Theta_xyzHandle;
+const osSemaphoreAttr_t Theta_xyz_attributes = {
+  .name = "Theta_xyz"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,6 +107,7 @@ void Sensor_AS5600(void *argument);
 void Dwin_Task(void *argument);
 void TASK_DMA_ENTRY(void *argument);
 void StartTask05(void *argument);
+void StartTask06(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -115,6 +128,9 @@ void MX_FREERTOS_Init(void) {
   /* Create the semaphores(s) */
   /* creation of Seme_Tx_dwin */
   Seme_Tx_dwinHandle = osSemaphoreNew(1, 1, &Seme_Tx_dwin_attributes);
+
+  /* creation of Theta_xyz */
+  Theta_xyzHandle = osSemaphoreNew(1, 0, &Theta_xyz_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -144,6 +160,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Task_controlmot */
   Task_controlmotHandle = osThreadNew(StartTask05, NULL, &Task_controlmot_attributes);
+
+  /* creation of Task_Dwin_get_t */
+  Task_Dwin_get_tHandle = osThreadNew(StartTask06, NULL, &Task_Dwin_get_t_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -229,6 +248,25 @@ void StartTask05(void *argument)
 //    osDelay(1);
 //  }
   /* USER CODE END StartTask05 */
+}
+
+/* USER CODE BEGIN Header_StartTask06 */
+/**
+* @brief Function implementing the Task_Dwin_get_t thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTask06 */
+void StartTask06(void *argument)
+{
+  /* USER CODE BEGIN StartTask06 */
+  /* Infinite loop */
+	Control_Dwin_get_theta_RTOS();
+//  for(;;)
+//  {
+//    osDelay(1);
+//  }
+  /* USER CODE END StartTask06 */
 }
 
 /* Private application code --------------------------------------------------*/

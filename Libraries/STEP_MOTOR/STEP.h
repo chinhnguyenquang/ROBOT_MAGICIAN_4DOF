@@ -168,12 +168,13 @@ public:
 
 	 friend void TIM2_CALLBACK_STEP();
 	 friend void Control_motor_RTOS();
+	 friend void Control_Dwin_get_theta_RTOS();
 
-	 void STEP_set_Target(uint8_t a); // set target
+	 void STEP_set_Target(uint16_t a); // set target
 
 	 void STEP_set_cal(uint16_t a,bool dir,bool dir_As); //chon diem 0 va chon chieu true (set) chieu cua encoder (false) -
 	 void STEP_set_home_trigger(void);
-	 void set_enable_step(bool val);
+
 
 	 int i=0;
 	//SET TOC DO QUAY STEP DUA VAO HAM ISR

@@ -122,12 +122,14 @@ void STEP::STEP_set_cal(uint16_t a,bool dir,bool dir_As)
 
 
 
-void STEP::STEP_set_Target(uint8_t a){ //a la goc
+void STEP::STEP_set_Target(uint16_t a){ //a la goc
 
 
 	this->STEPx.angle_kc_candat=this->STEPx.angle_as56_cal-this->STEPx.angle_as56_init; //TH NGUY HIEM KHI 2 DIEM NAY NAM TAI BIEN
 
 	this->Flags.flag_set_dir=false; //set chieu ban dau truoc khi dieu khien
+
+	this->STEPx.current_step=0;
 
 	if (this->dir_AS){
 		this->STEPx.angle_as56_tar=(int32_t)a*6*4096/360 +this->STEPx.angle_kc_candat; //chieu cam bien duong
@@ -148,7 +150,7 @@ void STEP::STEP_set_Target(uint8_t a){ //a la goc
 	}
 	else {
 		//TARGET AM HOAC DUONG
-		this->STEPx.target_step=(int32_t)a*STEP_PER_REV/360 - this->STEPx.angle_cur*STEP_PER_REV/ENC_PER_REV;
+		this->STEPx.target_step=(int32_t)a*STEP_PER_REV/360 - iabs(this->STEPx.angle_cur)*3200/ENC_PER_REV + iabs(this->STEPx.angle_kc_candat)*3200/ENC_PER_REV;
 
 	}
 	this->Status_Step=STEP_RUNNING_1;
@@ -242,8 +244,6 @@ void STEP::STEP_Process(){
 
 
 
-void STEP::set_enable_step(bool val){
-	this->is_enable_step=val;
-}
+
 
 

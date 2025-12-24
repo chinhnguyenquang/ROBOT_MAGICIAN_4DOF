@@ -24,6 +24,7 @@ void Sensor_AS5600_RTOS(void);
 void Dwin_RTOS(void);
 void DwinUsartTask_RTOS(void);
 void Control_motor_RTOS(void);
+void Control_Dwin_get_theta_RTOS(void);
 
 //TIM
 void TIM2_CALLBACK_STEP(void);
