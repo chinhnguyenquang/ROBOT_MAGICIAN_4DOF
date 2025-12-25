@@ -41,6 +41,7 @@ SUBDIRS := \
 Core/Src \
 Core/Startup \
 Drivers/STM32F4xx_HAL_Driver/Src \
+Libraries/DC_encoder \
 Libraries/DWIN \
 Libraries/Robot_Mapping_xyz \
 Libraries/STEP_MOTOR \

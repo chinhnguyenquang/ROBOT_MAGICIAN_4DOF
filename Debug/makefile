@@ -17,6 +17,7 @@ RM := rm -rf
 -include Libraries/STEP_MOTOR/subdir.mk
 -include Libraries/Robot_Mapping_xyz/subdir.mk
 -include Libraries/DWIN/subdir.mk
+-include Libraries/DC_encoder/subdir.mk
 -include Drivers/STM32F4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk

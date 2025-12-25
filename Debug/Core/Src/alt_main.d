@@ -48,7 +48,8 @@ Core/Src/alt_main.o: ../Core/Src/alt_main.cpp ../Core/Inc/alt_main.h \
  D:/DO_AN_ROBOT/codev2/v3/Libraries/Set_home/Sethome.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
- D:/DO_AN_ROBOT/codev2/v3/Libraries/Robot_Mapping_xyz/Robot_xyz.h
+ D:/DO_AN_ROBOT/codev2/v3/Libraries/Robot_Mapping_xyz/Robot_xyz.h \
+ D:/DO_AN_ROBOT/codev2/v3/Libraries/DC_encoder/Dc_motor.h
 ../Core/Inc/alt_main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -105,3 +106,4 @@ D:/DO_AN_ROBOT/codev2/v3/Libraries/Set_home/Sethome.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
 D:/DO_AN_ROBOT/codev2/v3/Libraries/Robot_Mapping_xyz/Robot_xyz.h:
+D:/DO_AN_ROBOT/codev2/v3/Libraries/DC_encoder/Dc_motor.h:

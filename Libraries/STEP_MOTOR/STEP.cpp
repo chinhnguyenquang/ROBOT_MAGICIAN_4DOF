@@ -200,7 +200,7 @@ void STEP::STEP_Process(){
 	else if (this->Status_Step==STEP_RUNNING_2){
 		this->STEPx.angle_cur=this->STEPx.angle_as56_cur;
 		int32_t tmp=this->STEPx.angle_as56_tar-this->STEPx.angle_cur;
-		if (iabs(tmp) <7) {
+		if (iabs(tmp) <4) {
 			this->Status_Step=STEP_DONE;
 			i=3;
 			return;
@@ -239,6 +239,8 @@ void STEP::STEP_Process(){
 
 	}
 }
+
+
 
 
 

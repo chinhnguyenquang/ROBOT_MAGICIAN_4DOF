@@ -77,6 +77,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/STEP_MOTOR}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/Set_home}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/Robot_Mapping_xyz}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Libraries/DC_encoder}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp.1043859398" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.input.cpp"/>
 							</tool>
@@ -101,6 +102,7 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Libraries/DWIN"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Libraries/Robot_Mapping_xyz"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Libraries/DC_encoder"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Libraries/STEP_MOTOR"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="Libraries/Set_home"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>

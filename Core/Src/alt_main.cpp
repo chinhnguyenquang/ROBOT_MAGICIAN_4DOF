@@ -29,6 +29,8 @@ extern "C" {
 
 
 #include "Robot_xyz.h"
+#include "Dc_motor.h"
+
 
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -127,78 +129,141 @@ uint16_t yyy[3];
 #define AS5600_ADDR 0x36  // I2C address sensor
 
 
-static void I2C_BusRecover(I2C_HandleTypeDef *hi2c)
+static void I2C_BusRecover(I2C_HandleTypeDef *hi2c,
+                           GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin,
+                           GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
 {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
     HAL_I2C_DeInit(hi2c);
-    osDelay(2);
+
+    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull  = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+    GPIO_InitStruct.Pin = SCL_Pin;
+    HAL_GPIO_Init(SCL_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = SDA_Pin;
+    HAL_GPIO_Init(SDA_Port, &GPIO_InitStruct);
+
+    /* Release bus */
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
+    osDelay(1);
+
+    /* Clock out 9 pulses */
+    for (int i = 0; i < 9; i++)
+    {
+        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_RESET);
+        osDelay(1);
+        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+        osDelay(1);
+    }
+
+    /* STOP */
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_RESET);
+    osDelay(1);
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+    osDelay(1);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
+
     HAL_I2C_Init(hi2c);
 }
 
 
+static HAL_StatusTypeDef AS5600_Read(I2C_HandleTypeDef *hi2c,
+                                     uint16_t *value,
+                                     uint8_t *buf,
+                                     GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin,
+                                     GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
+{
+    if (HAL_I2C_Mem_Read(hi2c,
+                         AS5600_ADDR << 1,
+                         0x0C,
+                         I2C_MEMADD_SIZE_8BIT,
+                         buf,
+                         2,
+                         10) == HAL_OK)
+    {
+        *value = ((buf[0] << 8) | buf[1]) & 0x0FFF;
+        return HAL_OK;
+    }
+
+    uint32_t err = HAL_I2C_GetError(hi2c);
+    if (err == HAL_I2C_ERROR_TIMEOUT ||
+        err == HAL_I2C_ERROR_BERR ||
+        err == HAL_I2C_ERROR_AF)
+    {
+        I2C_BusRecover(hi2c,
+                       SCL_Port, SCL_Pin,
+                       SDA_Port, SDA_Pin);
+    }
+
+    return HAL_ERROR;
+}
+
+
+/* ================= I2C1 ================= */
+#define I2C1_SCL_Port GPIOB
+#define I2C1_SCL_Pin  GPIO_PIN_8
+#define I2C1_SDA_Port GPIOB
+#define I2C1_SDA_Pin  GPIO_PIN_9
+
+/* ================= I2C2 ================= */
+#define I2C2_SCL_Port GPIOB
+#define I2C2_SCL_Pin  GPIO_PIN_10
+#define I2C2_SDA_Port GPIOB
+#define I2C2_SDA_Pin  GPIO_PIN_11
+
+/* ================= I2C3 ================= */
+#define I2C3_SCL_Port GPIOA
+#define I2C3_SCL_Pin  GPIO_PIN_8
+#define I2C3_SDA_Port GPIOC
+#define I2C3_SDA_Pin  GPIO_PIN_9
+
+#define AS5600_ADDR   0x36
+
 void Sensor_AS5600_RTOS()
 {
     uint16_t val1 = 0, val2 = 0, val3 = 0;
+    uint8_t buf1[2], buf2[2], buf3[2];
+
+    /* Chờ AS5600 ổn định sau power-on */
+    osDelay(50);
 
     for (;;)
     {
-        /* ========= I2C1 ========= */
-        if (HAL_I2C_Mem_Read(&hi2c1,
-                             AS5600_ADDR << 1,
-                             0x0C,
-                             I2C_MEMADD_SIZE_8BIT,
-                             data_i2c1,
-                             2,
-                             10) == HAL_OK)
+        /* ===== I2C1 ===== */
+        if (AS5600_Read(&hi2c1, &val1, buf1,
+                        I2C1_SCL_Port, I2C1_SCL_Pin,
+                        I2C1_SDA_Port, I2C1_SDA_Pin) == HAL_OK)
         {
-            val1 = ((data_i2c1[0] << 8) | data_i2c1[1]) & 0x0FFF;
             _STEP3->update_As5600_cur(val1);
             yyy[0] = val1;
         }
-        else
-        {
-            I2C_BusRecover(&hi2c1);
-        }
 
-        /* ========= I2C2 ========= */
-        if (HAL_I2C_Mem_Read(&hi2c2,
-                             AS5600_ADDR << 1,
-                             0x0C,
-                             I2C_MEMADD_SIZE_8BIT,
-                             data_i2c2,
-                             2,
-                             10) == HAL_OK)
+        /* ===== I2C2 ===== */
+        if (AS5600_Read(&hi2c2, &val2, buf2,
+                        I2C2_SCL_Port, I2C2_SCL_Pin,
+                        I2C2_SDA_Port, I2C2_SDA_Pin) == HAL_OK)
         {
-            val2 = ((data_i2c2[0] << 8) | data_i2c2[1]) & 0x0FFF;
             _STEP1->update_As5600_cur(val2);
             yyy[1] = val2;
         }
-        else
-        {
-            I2C_BusRecover(&hi2c2);
-        }
 
-        /* ========= I2C3 ========= */
-        if (HAL_I2C_Mem_Read(&hi2c3,
-                             AS5600_ADDR << 1,
-                             0x0C,
-                             I2C_MEMADD_SIZE_8BIT,
-                             data_i2c3,
-                             2,
-                             10) == HAL_OK)
+        /* ===== I2C3 ===== */
+        if (AS5600_Read(&hi2c3, &val3, buf3,
+                        I2C3_SCL_Port, I2C3_SCL_Pin,
+                        I2C3_SDA_Port, I2C3_SDA_Pin) == HAL_OK)
         {
-            val3 = ((data_i2c3[0] << 8) | data_i2c3[1]) & 0x0FFF;
             _STEP2->update_As5600_cur(val3);
             yyy[2] = val3;
         }
-        else
-        {
-            I2C_BusRecover(&hi2c3);
-        }
 
-        osDelay(5);
+        osDelay(3);
     }
 }
-
 
 
 
@@ -231,54 +296,87 @@ void Control_Dwin_get_theta_RTOS(void){
     for (;;)
     {
     	if(Angle_4_theta != nullptr){
-    		if (bien_co_set_theta==0){
-    				_Robot_state=ROBOT_ACTIVE;
-    				_STEP1->STEP_set_Target(Angle_4_theta->theta1);
-    				_STEP2->STEP_set_Target(Angle_4_theta->theta2);
-    				_STEP3->STEP_set_Target(Angle_4_theta->theta3);
-    				theta[0]=Angle_4_theta->theta1;
-    				theta[1]=Angle_4_theta->theta2;
-    				theta[2]=Angle_4_theta->theta3;
-    				theta[3]=Angle_4_theta->theta4;
-    				yui=5;
-    				bien_co_set_theta=1;
-    				osDelay(3000);
+    		if(bien_co_set_theta==0){
+    			_Robot_state=ROBOT_ACTIVE;
+				_STEP1->STEP_set_Target(88); // GIONG NHU QUI HOACH QUI DAO 1
+				_STEP2->STEP_set_Target(7);
+				_STEP3->STEP_set_Target(10);
+
+
+    			bien_co_set_theta=1;
     		}
-    		if(bien_co_set_theta==1){
-    			//
-    			if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
-    				osDelay(3000);
-    				_STEP1->STEP_set_Target(90); // GIONG NHU QUI HOACH QUI DAO
-    				_STEP2->STEP_set_Target(0);
-    				_STEP3->STEP_set_Target(0);
-    				theta[0]=Angle_4_theta->theta1;
-    				theta[1]=Angle_4_theta->theta2;
-    				theta[2]=Angle_4_theta->theta3;
-    				theta[3]=Angle_4_theta->theta4;
-    				yui=6;
+    		if (bien_co_set_theta==1){
+					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
-    				bien_co_set_theta=2;
-    			}
+						HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_SET);
+						_STEP1->STEP_set_Target(Angle_4_theta->theta1);
+						_STEP2->STEP_set_Target(Angle_4_theta->theta2);
+						_STEP3->STEP_set_Target(Angle_4_theta->theta3);
+						theta[0]=Angle_4_theta->theta1;
+						theta[1]=Angle_4_theta->theta2;
+						theta[2]=Angle_4_theta->theta3;
+						theta[3]=Angle_4_theta->theta4;
+						yui=5;
+						bien_co_set_theta=2;
+
+				}
     		}
-    		if(bien_co_set_theta==2){
-    			if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
-    				bien_co_set_theta=3;
-    			}
+
+				if (bien_co_set_theta==2){
+					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+
+						osDelay(1000);
+
+						_STEP1->STEP_set_Target(88); // GIONG NHU QUI HOACH QUI DAO 1
+						_STEP2->STEP_set_Target(7);
+						_STEP3->STEP_set_Target(10);
+
+						bien_co_set_theta=3;
+
+					}
+				}
+    		    if(bien_co_set_theta==3){
+					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+
+						osDelay(30);
+						_STEP1->STEP_set_Target(0); // GIONG NHU QUI HOACH QUI DAO 2
+						_STEP2->STEP_set_Target(0);
+						_STEP3->STEP_set_Target(0);
+						theta[0]=Angle_4_theta->theta1;
+						theta[1]=Angle_4_theta->theta2;
+						theta[2]=Angle_4_theta->theta3;
+						theta[3]=Angle_4_theta->theta4;
+						yui=7;
+
+						bien_co_set_theta=4;
+							}
+    		    		}
+				if(bien_co_set_theta==4){
+					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+						HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_RESET);
+						bien_co_set_theta=5;
+					}
+
+				}
+
+				if(bien_co_set_theta==5){
+
+						Angle_4_theta=nullptr;
+						bien_co_set_theta=0;
+						yui=10;
+						osSemaphoreRelease(Theta_xyzHandle);
+
+
+				}
 
     		}
-    		if(bien_co_set_theta==3){
-    			if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
-    				Angle_4_theta=nullptr;
-    				bien_co_set_theta=0;
-    				yui=10;
-    				osSemaphoreRelease(Theta_xyzHandle);
-    			}
-
-    		}
-    	}
 
 
-        osDelay(20);
+
+
+
+
+        osDelay(100);
     }
 }
 
@@ -293,7 +391,7 @@ void DwinUsartTask_RTOS(){
 
 	    osSemaphoreAcquire(Seme_Tx_dwinHandle, osWaitForever); // <-- chặn trước khi gửi
 
-	    if ((req != 255)&&(req >= 0)){
+	    if ((req != 255)){
 	        uint16_t add=0x1000+(uint16_t)req*4;
 	        Update_Theta_Robot(req);
 	        osSemaphoreAcquire(Theta_xyzHandle, osWaitForever);
@@ -303,23 +401,6 @@ void DwinUsartTask_RTOS(){
 	        _Dwin->beepHMI();
 	        _Robot_state=ROBOT_SETHOME;
 	        Set_dir_sethome=false;
-//	        ++yy;
-//	        if (yy==1){
-//		        _Robot_state=ROBOT_ACTIVE;
-//		        _STEP1->STEP_set_Target(90);
-//		        _STEP2->STEP_set_Target(30);
-//		        _STEP3->STEP_set_Target(30);
-//	        }
-//	        else if (yy == 2){
-//		        _STEP1->STEP_set_Target(45);
-//		        _STEP2->STEP_set_Target(30);
-//		        _STEP3->STEP_set_Target(30);
-//	        }
-//	        else if (yy==3){
-//		        _STEP1->STEP_set_Target(90);
-//		        _STEP2->STEP_set_Target(20);
-//		        _STEP3->STEP_set_Target(20);
-//	        }
 
 
 	    }
@@ -361,7 +442,7 @@ void Dwin_RTOS(void)
             _Dwin->pos_state = 0;
         }
 
-        osDelay(50);
+        osDelay(1000);
     }
 }
 
@@ -414,14 +495,14 @@ void Control_motor_RTOS(){
 				////MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 
-				if ((_Flag.flag1)&&(_Flag.flag2)&&(_Flag.flag3)&&(_Flag.flag4)) {_Robot_state=ROBOT_IDLE; }//DUNG IM
+				if ((_Flag.flag1)&&(_Flag.flag2)&&(_Flag.flag3)) {_Robot_state=ROBOT_IDLE;Flag_cho_set_home=false; }//DUNG IM
 
 				//MUON QUAY VE SET HOME PHAI UPDATE THEM SET DIR SETHOME
 				if((!Set_dir_sethome)){
 					if(!_Flag.flag1)  {HAL_GPIO_WritePin(GPIOE, GPIO_PIN_15,GPIO_PIN_RESET);}
 					if(!_Flag.flag2)  {HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15,GPIO_PIN_RESET);}
 					if(!_Flag.flag3)  {HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3,GPIO_PIN_SET);}
-					_Flag.flag4_bd=false;
+					//_Flag.flag4_bd=false;
 					Set_dir_sethome=true;
 					_STEP1->is_enable_step=true;_STEP1->STEPx.Chieuquayhientai=STEP_SETHOME;
 					_STEP2->is_enable_step=true;_STEP2->STEPx.Chieuquayhientai=STEP_SETHOME;
@@ -433,10 +514,10 @@ void Control_motor_RTOS(){
 
 
 				if ((_Flag.flag1)&&(_Flag.flag2)&&(_Flag.flag3)&&(Set_dir_sethome)){
-					_Flag.flag4_bd=true;
+					//_Flag.flag4_bd=true;
 					Flag_cho_set_home=false;
 				}
-				Sethome_link4(&htim3,&htim4);
+				//Sethome_link4(&htim3,&htim4);
 		}
 
 		else if (_Robot_state==ROBOT_ACTIVE){
@@ -468,7 +549,7 @@ void Control_motor_RTOS(){
 
 		}
 
-		 osDelay(1);
+		 osDelay(3);
 
     }
 
@@ -526,14 +607,15 @@ int alt_main()
 	_STEP2->setStepPeriod(50);
 	_STEP3->setStepPeriod(50);
 	//drv8871
-	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
-	HAL_TIM_PWM_Start (&htim4,TIM_CHANNEL_4);
+//	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+//	HAL_TIM_PWM_Start (&htim4,TIM_CHANNEL_4);
 
 
 	//DE TIEN HANH SET HOME CAN TAC DONG
 	_Robot_state=ROBOT_SETHOME;
 	Set_dir_sethome=false;
 	//MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+	//HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_SET);
 	HUT(0);
 
 	return 0;
