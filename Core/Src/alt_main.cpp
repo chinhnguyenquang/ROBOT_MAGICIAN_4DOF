@@ -106,9 +106,9 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if (GPIO_Pin == GPIO_PIN_5) {   _Flag.flag1 = 1;}
-    else if (GPIO_Pin == GPIO_PIN_3) { _Flag.flag2 = 1;}
-    else if (GPIO_Pin == GPIO_PIN_0) { _Flag.flag3 = 1;}
+    if (GPIO_Pin == GPIO_PIN_5) {   _Flag.flag1 = 1;_STEP1->is_enable_step=false;}
+    else if (GPIO_Pin == GPIO_PIN_3) { _Flag.flag2 = 1;_STEP2->is_enable_step=false;}
+    else if (GPIO_Pin == GPIO_PIN_0) { _Flag.flag3 = 1;_STEP3->is_enable_step=false;}
     else if (GPIO_Pin == GPIO_PIN_9) { _Flag.flag4 = 1;}
 }
 
@@ -289,6 +289,7 @@ void Update_Theta_Robot(uint8_t req){
 }
 uint16_t yui=0;
 uint16_t theta[4];
+
 void Control_Dwin_get_theta_RTOS(void){
 
 	uint8_t bien_co_set_theta=0;
@@ -298,20 +299,28 @@ void Control_Dwin_get_theta_RTOS(void){
     	if(Angle_4_theta != nullptr){
     		if(bien_co_set_theta==0){
     			_Robot_state=ROBOT_ACTIVE;
-				_STEP1->STEP_set_Target(88); // GIONG NHU QUI HOACH QUI DAO 1
-				_STEP2->STEP_set_Target(7);
-				_STEP3->STEP_set_Target(10);
+//				_STEP1->STEP_set_Target(88); // GIONG NHU QUI HOACH QUI DAO 1
+//				_STEP2->STEP_set_Target(7);
+//				_STEP3->STEP_set_Target(10);
 
+				_STEP1->STEP_set_target_as(-6238);
+				_STEP2->STEP_set_target_as(3935);
+				_STEP3->STEP_set_target_as(-4512);
 
-    			bien_co_set_theta=1;
+				bien_co_set_theta =10;
+    			//bien_co_set_theta=1;
     		}
     		if (bien_co_set_theta==1){
 					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
 						HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_SET);
-						_STEP1->STEP_set_Target(Angle_4_theta->theta1);
-						_STEP2->STEP_set_Target(Angle_4_theta->theta2);
-						_STEP3->STEP_set_Target(Angle_4_theta->theta3);
+//						_STEP1->STEP_set_Target(Angle_4_theta->theta1);
+//						_STEP2->STEP_set_Target(Angle_4_theta->theta2);
+//						_STEP3->STEP_set_Target(Angle_4_theta->theta3);
+
+						_STEP1->STEP_set_target_as(-6505);
+						_STEP2->STEP_set_target_as(2187);
+						_STEP3->STEP_set_target_as(-2738);
 						theta[0]=Angle_4_theta->theta1;
 						theta[1]=Angle_4_theta->theta2;
 						theta[2]=Angle_4_theta->theta3;
@@ -327,9 +336,9 @@ void Control_Dwin_get_theta_RTOS(void){
 
 						osDelay(1000);
 
-						_STEP1->STEP_set_Target(88); // GIONG NHU QUI HOACH QUI DAO 1
-						_STEP2->STEP_set_Target(7);
-						_STEP3->STEP_set_Target(10);
+						_STEP1->STEP_set_target_as(-6236);
+						_STEP2->STEP_set_target_as(3897);
+						_STEP3->STEP_set_target_as(-4457);
 
 						bien_co_set_theta=3;
 
@@ -339,9 +348,9 @@ void Control_Dwin_get_theta_RTOS(void){
 					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
 						osDelay(30);
-						_STEP1->STEP_set_Target(0); // GIONG NHU QUI HOACH QUI DAO 2
-						_STEP2->STEP_set_Target(0);
-						_STEP3->STEP_set_Target(0);
+						_STEP1->STEP_set_target_as(-479);
+						_STEP2->STEP_set_target_as(6472);
+						_STEP3->STEP_set_target_as(-4221);
 						theta[0]=Angle_4_theta->theta1;
 						theta[1]=Angle_4_theta->theta2;
 						theta[2]=Angle_4_theta->theta3;
@@ -480,17 +489,24 @@ void TIM2_CALLBACK_STEP(void)
 
 int32_t mang1[10],mang2[10],mang3[10];
 
-
-
+int32_t bien_init1[3];
+int32_t gttt[3];
+int32_t bien_init[3];
+int32_t bien_init3[3];
 void Control_motor_RTOS(){
 	for (;;)
     {
 		Home_Update_All();  //UPDATE DEN BÁO SETHOME
+		gttt[0]=_STEP1->STEPx.angle_as56_cur;
+		gttt[1]=_STEP2->STEPx.angle_as56_cur;
+		gttt[2]=_STEP3->STEPx.angle_as56_cur;
+
+		if (_Flag.flag1) _STEP1->STEP_set_home_trigger(); //NEU CO QUAY THEM SE THEM 1 LAN TU CABLI
+		if (_Flag.flag2) _STEP2->STEP_set_home_trigger();
+		if (_Flag.flag3) _STEP3->STEP_set_home_trigger();
+
 		if (_Robot_state==ROBOT_SETHOME){
 
-				if (_Flag.flag1) _STEP1->STEP_set_home_trigger(); //NEU CO QUAY THEM SE THEM 1 LAN TU CABLI
-				if (_Flag.flag2) _STEP2->STEP_set_home_trigger();
-				if (_Flag.flag3) _STEP3->STEP_set_home_trigger();
 
 				////MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
@@ -504,9 +520,9 @@ void Control_motor_RTOS(){
 					if(!_Flag.flag3)  {HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3,GPIO_PIN_SET);}
 					//_Flag.flag4_bd=false;
 					Set_dir_sethome=true;
-					_STEP1->is_enable_step=true;_STEP1->STEPx.Chieuquayhientai=STEP_SETHOME;
-					_STEP2->is_enable_step=true;_STEP2->STEPx.Chieuquayhientai=STEP_SETHOME;
-					_STEP3->is_enable_step=true;_STEP3->STEPx.Chieuquayhientai=STEP_SETHOME;
+					_STEP1->is_enable_step=true;_STEP1->Status_Step=STEP_SETHOME;
+					_STEP2->is_enable_step=true;_STEP2->Status_Step=STEP_SETHOME;
+					_STEP3->is_enable_step=true;_STEP3->Status_Step=STEP_SETHOME;
 
 					Flag_cho_set_home=true; //bien trang thai isr
 
@@ -522,34 +538,18 @@ void Control_motor_RTOS(){
 
 		else if (_Robot_state==ROBOT_ACTIVE){
 
-			_STEP1->STEP_Process();
-			_STEP2->STEP_Process();
-			_STEP3->STEP_Process();
+			_STEP1->STEP_CLOSEDLOOP();
 
-			mang1[0]=_STEP1->STEPx.angle_as56_tar;
-			mang1[1]=_STEP1->STEPx.angle_as56_cur;
-			mang1[2]=_STEP1->STEPx.target_step;
-			mang1[3]=_STEP1->STEPx.current_step;
-			mang1[4]=_STEP1->STEPx.angle_kc_candat;
-			mang1[5]=_STEP1->i;
+			_STEP2->STEP_CLOSEDLOOP();
 
-			mang2[0]=_STEP2->STEPx.angle_as56_tar;
-			mang2[1]=_STEP2->STEPx.angle_as56_cur;
-			mang2[2]=_STEP2->STEPx.target_step;
-			mang2[3]=_STEP2->STEPx.current_step;
-			mang2[4]=_STEP2->STEPx.angle_kc_candat;
-			mang2[5]=_STEP2->i;
+			_STEP3->STEP_CLOSEDLOOP();
 
-			mang3[0]=_STEP3->STEPx.angle_as56_tar;
-			mang3[1]=_STEP3->STEPx.angle_as56_cur;
-			mang3[2]=_STEP3->STEPx.target_step;
-			mang3[3]=_STEP3->STEPx.current_step;
-			mang3[4]=_STEP3->STEPx.angle_kc_candat;
-			mang3[5]=_STEP3->i;
+
+
 
 		}
 
-		 osDelay(3);
+		 osDelay(5);
 
     }
 
@@ -599,10 +599,18 @@ int alt_main()
 	);
 
 
-	_STEP1->STEP_set_cal(2707,true,false);
-	_STEP2->STEP_set_cal(3249, true,true);
-	_STEP3->STEP_set_cal(1338, false,false);
+
+	// SET CHIEU CHO STEP /////////////////////////
+	_STEP1->STEP_set_dir_as_step(true,false);
+	_STEP2->STEP_set_dir_as_step(true,true);
+	_STEP3->STEP_set_dir_as_step(false,false);
+
+	//MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+
+
+
 	Home_Update_All();
+
 	_STEP1->setStepPeriod(50);
 	_STEP2->setStepPeriod(50);
 	_STEP3->setStepPeriod(50);

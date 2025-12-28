@@ -32,19 +32,18 @@ struct Resolution {
 
 typedef enum
 {
-
-    STEP_RUNNING_1,       // DK LAN 1 (OPEN LOOP)
-	STEP_RUNNING_2,		//DK LAN 2 (SD AS5600)
+	STEP_SETHOME,
+    STEP_OPEN_LOOP,       // DK LAN 1 (OPEN LOOP)
+	STEP_CLOSED,		//DK LAN 2 (SD AS5600)
     STEP_DONE,          // Step hoàn thành
 //    STEP_ERROR          // Step gặp lỗi
 } StepState_t;
 
 
+
 typedef enum{
-	STEP_SETHOME,
 	STEP_DUONG,
 	STEP_AM,
-	STEP_CLOSED, // khi dieu khien closed loop thi khong cong current step
 }Chieuquay_state_t;
 
 typedef struct
@@ -57,6 +56,7 @@ typedef struct
 	int32_t angle_as56_cur; //bien luu giu da quay bao nhieu goc
 	int32_t angle_as56_tar;//so goc can quay
 	int32_t angle_kc_candat;
+	int32_t angle_est;
 
     /* Encoder */
 
@@ -65,7 +65,7 @@ typedef struct
 
     /* Step */
     int32_t target_step;
-    int32_t current_step;
+    volatile int32_t current_step;
 
     Chieuquay_state_t Chieuquayhientai;
 
@@ -77,6 +77,7 @@ typedef struct {
 	bool flag_angle_init; // khoi tao de luu gia tri ban dau cua goc dau tien (angle_init)
 	bool flag_trang_thaidau_vehome; //KHI CHAM VAO HOME THI CONG THEM KHOANG DE VE VI TRI 0
 	bool flag_set_dir;//SET DIR DE CHON CHIEU 1 LAN
+	bool flag_set_chieu_openloop; //khi set openloop
 
 }FLAG_STEPx_Handle_t;
 
@@ -102,6 +103,7 @@ private :
 
 	bool Flag_step_oke;
 	StepState_t Status_Step;
+	uint8_t update_closed_loop;
 
 public:
 	STEP(uint8_t M0, uint8_t M1, uint8_t M2,
@@ -128,6 +130,7 @@ public:
         Flags.flag_angle_init=false;
         Flags.flag_set_dir=false;
         Flags.flag_trang_thaidau_vehome=false;
+        Flags.flag_set_chieu_openloop=false;
 
         STEPx.target_step=0;
         STEPx.current_step=0;
@@ -135,7 +138,10 @@ public:
         STEPx.angle_as56_cur=0;
         STEPx.angle_as56_tar=0;
 
-
+        Ki_acc=0;
+        stable_cnt=0;
+        last_error=0;
+        remain=0;
 
         Flag_step_oke=false;
 
@@ -155,33 +161,39 @@ private:
 
     volatile bool is_enable_step=false;
 
-    uint8_t remain;
+    int32_t remain;
 
 public:
-
+    void STEP_set_target_as(int32_t target);
 	 void update_As5600_cur(int32_t value);
 	 void STEP_Process();
 
 	 void dir_step(uint8_t dir);
-	 uint32_t getPosition();
+
 
 
 	 friend void TIM2_CALLBACK_STEP();
 	 friend void Control_motor_RTOS();
 	 friend void Control_Dwin_get_theta_RTOS();
+	 friend void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
-	 void STEP_set_Target(uint16_t a); // set target
-
-	 void STEP_set_cal(uint16_t a,bool dir,bool dir_As); //chon diem 0 va chon chieu true (set) chieu cua encoder (false) -
+	 void STEP_set_dir_as_step(bool dir,bool dir_As); //chon chieu true (set) chieu cua encoder (false)
 	 void STEP_set_home_trigger(void);
 
-
-	 int i=0;
+	 void STEP_CLOSEDLOOP();
+	 int32_t last_error;
+	 int32_t stable_cnt;
+	 float Ki_acc;
+	 void update_goc_debug();
 	//SET TOC DO QUAY STEP DUA VAO HAM ISR
 private:
 	uint32_t step_period_us;
 public:
 	void setStepPeriod(uint32_t period);
+
+
+public:
+	void STEP_OPENLOOP();
 };
 
 

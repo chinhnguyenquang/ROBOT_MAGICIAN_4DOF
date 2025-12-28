@@ -16,60 +16,15 @@ static inline int32_t iabs(int32_t x)
 
 
 
-void STEP::update_ISR(){
-	if(!is_enable_step) return;
 
-    if(this->STEPx.Chieuquayhientai==STEP_CLOSED){
-    	if(this->remain==0) return;
-    	this->remain--;
-    }
-
-    if(step_period_us == 0) return;
-    step_timer++;
-    if(step_timer >= step_period_us) {
-        step_timer = 0;
-        step_state ^= 1;
-        this->_step_port->BSRR = step_state ? (1U << this->_step_pin) : (1U << (this->_step_pin+16));
-
-        if(this->STEPx.Chieuquayhientai==STEP_SETHOME) return;
-
-
-
-
-        if (this->STEPx.Chieuquayhientai==STEP_DUONG){
-        	if(step_state) this->STEPx.current_step++;
-        }
-        else if (this->STEPx.Chieuquayhientai==STEP_AM){
-        	if(step_state) this->STEPx.current_step--;
-        }
-        if (this->STEPx.current_step==this->STEPx.target_step) {this->is_enable_step=false;this->Status_Step=STEP_RUNNING_2; this->STEPx.Chieuquayhientai=STEP_CLOSED;}
-
-    }
-}
-
-
-
-
-
-
-
+//////////////////////////////OKKKKK///////////////////////////////////////
 void STEP::dir_step(uint8_t dir){this->_dir_port->BSRR = dir ? (1U << this->_dir_pin ) : (1U << (this->_dir_pin + 16));}
-
-
-
-void STEP::setStepPeriod(uint32_t period) {
-
-    const uint32_t MIN_PERIOD_US = 50; // giới hạn min
-    if(period < MIN_PERIOD_US) period = MIN_PERIOD_US;
-    step_period_us = period/50;
-}
-
-
-uint32_t STEP::getPosition() { return this->STEPx.current_step; }
 
 
 #define AS5600_RESOLUTION 4096
 #define AS5600_HALF       2048
+
+
 
 void STEP::update_As5600_cur(int32_t value)
 {
@@ -97,6 +52,80 @@ void STEP::update_As5600_cur(int32_t value)
 }
 
 
+void STEP::STEP_set_dir_as_step(bool dir,bool dir_As)
+{
+	this->dir_Stepx=dir;
+	this->dir_AS=dir_As;
+}
+
+
+////////MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+
+
+/////////////////// CO THE CHINH SUA UPDATE//////////////////////////////
+void STEP::setStepPeriod(uint32_t period) {
+
+    const uint32_t MIN_PERIOD_US = 50; // giới hạn min
+    if(period < MIN_PERIOD_US) period = MIN_PERIOD_US;
+    step_period_us = period/50;
+}
+////////MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+
+void STEP::update_ISR(){
+	if(!is_enable_step) return;
+
+	if((remain == 0)&&(this->Status_Step==STEP_CLOSED)){
+		is_enable_step=false;
+		return;
+	}
+
+    if(step_period_us == 0) return;
+    step_timer++;
+    if(step_timer >= step_period_us) {
+        step_timer = 0;
+        step_state ^= 1;
+        this->_step_port->BSRR = step_state ? (1U << this->_step_pin) : (1U << (this->_step_pin+16));
+
+
+        if (!step_state) return;
+
+        if(this->Status_Step==STEP_SETHOME) return;
+
+
+        //CLOSED
+        if(this->Status_Step==STEP_CLOSED){
+            	this->remain--;
+            	return;
+        }
+
+        //OPEN LOOP
+
+        if (this->STEPx.Chieuquayhientai==STEP_DUONG)   this->STEPx.current_step++;
+        else if (this->STEPx.Chieuquayhientai==STEP_AM) this->STEPx.current_step--;
+
+        if (this->STEPx.current_step==this->STEPx.target_step) {this->is_enable_step=false;this->Status_Step=STEP_CLOSED;}
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -108,136 +137,190 @@ void STEP::update_As5600_cur(int32_t value)
 /* ===== FILTER + FEEDBACK ===== */
 #define ENC_DEADBAND     3       // rung encoder (microstep)
 #define STABLE_COUNT     3       // số lần ổn định liên tiếp
-#define FEEDBACK_DEADBAND 2      // deadband feedback
+#define FEEDBACK_DEADBAND 5      // deadband feedback
 #define MAX_CORRECT_STEP 2       // step bù mỗi lần
 
 
 
-void STEP::STEP_set_cal(uint16_t a,bool dir,bool dir_As)
-{
-	this->STEPx.angle_as56_cal=a;
-	this->dir_Stepx=dir;
-	this->dir_AS=dir_As;
-}
 
 
 
-void STEP::STEP_set_Target(uint16_t a){ //a la goc
+
+//void STEP::STEP_set_Target(uint16_t a){ //a la goc
+//
+//
+//	this->STEPx.angle_kc_candat=this->STEPx.angle_as56_cal-this->STEPx.angle_as56_init; //TH NGUY HIEM KHI 2 DIEM NAY NAM TAI BIEN
+//
+//	this->Flags.flag_set_dir=false; //set chieu ban dau truoc khi dieu khien
+//
+//	this->STEPx.current_step=0;
+//
+//	if (this->dir_AS){
+//		this->STEPx.angle_as56_tar=(int32_t)a*6*4096/360 +this->STEPx.angle_kc_candat; //chieu cam bien duong
+//	}
+//	else {
+//		this->STEPx.angle_as56_tar=(-1)*(int32_t)a*6*4096/360 + this->STEPx.angle_kc_candat;
+//	}
+//
+//
+//	if(!(this->Flags.flag_trang_thaidau_vehome)){
+//		//NGHIA LA HIEN DANG SET HOME CAN + THEM 1 LUONG DE VE 0
+//		this->STEPx.angle_cur=0;
+//
+//		this->STEPx.target_step=(int32_t)a*STEP_PER_REV/360+iabs(this->STEPx.angle_kc_candat)*STEP_PER_REV/ENC_PER_REV/6;
+//
+//		this->Flags.flag_trang_thaidau_vehome=true;
+//
+//	}
+//	else {
+//		//TARGET AM HOAC DUONG
+//		this->STEPx.target_step=(int32_t)a*STEP_PER_REV/360 - iabs(this->STEPx.angle_cur)*3200/ENC_PER_REV + iabs(this->STEPx.angle_kc_candat)*3200/ENC_PER_REV;
+//
+//	}
+//	this->Status_Step=STEP_OPEN_LOOP;
+//
+//}
+
+// encoder → step
+#define ENC_TO_STEP(e)   ((int32_t)((int64_t)(e) * 19200 / (4096 * 6)))
+
+void STEP::STEP_set_target_as(int32_t target){
+	this->STEPx.angle_as56_tar=target;
+
+	this->STEPx.angle_kc_candat=this->STEPx.angle_as56_init; //TH NGUY HIEM KHI 2 DIEM NAY NAM TAI BIEN
 
 
-	this->STEPx.angle_kc_candat=this->STEPx.angle_as56_cal-this->STEPx.angle_as56_init; //TH NGUY HIEM KHI 2 DIEM NAY NAM TAI BIEN
-
-	this->Flags.flag_set_dir=false; //set chieu ban dau truoc khi dieu khien
 
 	this->STEPx.current_step=0;
-
-	if (this->dir_AS){
-		this->STEPx.angle_as56_tar=(int32_t)a*6*4096/360 +this->STEPx.angle_kc_candat; //chieu cam bien duong
-	}
-	else {
-		this->STEPx.angle_as56_tar=(-1)*(int32_t)a*6*4096/360 + this->STEPx.angle_kc_candat;
-	}
-
-
 	if(!(this->Flags.flag_trang_thaidau_vehome)){
-		//NGHIA LA HIEN DANG SET HOME CAN + THEM 1 LUONG DE VE 0
+
+		this->STEPx.angle_as56_cur=0;
 		this->STEPx.angle_cur=0;
 
-		this->STEPx.target_step=(int32_t)a*STEP_PER_REV/360+iabs(this->STEPx.angle_kc_candat)*STEP_PER_REV/ENC_PER_REV/6;
+		this->STEPx.target_step=iabs((int32_t)(target * 25/32));
 
+		this->STEPx.target_step=(int32_t)(STEPx.target_step*0.9);
+		//this->STEPx.target_step=500;
 		this->Flags.flag_trang_thaidau_vehome=true;
 
 	}
 	else {
 		//TARGET AM HOAC DUONG
-		this->STEPx.target_step=(int32_t)a*STEP_PER_REV/360 - iabs(this->STEPx.angle_cur)*3200/ENC_PER_REV + iabs(this->STEPx.angle_kc_candat)*3200/ENC_PER_REV;
-
+		this->STEPx.target_step=iabs((int32_t)((target-this->STEPx.angle_cur)*25/32));
+		this->STEPx.target_step=(int32_t)(STEPx.target_step*0.9);
+		//this->STEPx.target_step=500;
 	}
-	this->Status_Step=STEP_RUNNING_1;
+	this->Status_Step=STEP_OPEN_LOOP;
+	//MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+	this->Flags.flag_set_dir=false;
+	this->Flags.flag_set_chieu_openloop=false;
+	//MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
+	STEP_OPENLOOP();
 }
-
 
 void STEP::STEP_set_home_trigger(void){
 	this->Flags.flag_trang_thaidau_vehome=false;
 	this->Flags.flag_angle_init=false;
-	this->is_enable_step=false;
+	//this->is_enable_step=false;
+	//this->STEPx.angle_as56_cur=0;
 }
 
 
 
 
 
-void STEP::STEP_Process(){
-	if(this->Status_Step==STEP_DONE) return;
 
+#define FABS(x)        ((x) < 0.0f ? -(x) : (x))
+
+#define STEP_PER_ENC   (25.0f / 32.0f)   // encoder -> step
+#define ENC_PER_STEP   (32.0f / 25.0f)   // step -> encoder
+
+/////////////////////////// CLOSED LOOP ///////////////////////////
+void STEP::STEP_CLOSEDLOOP()
+{
+    if (Status_Step != STEP_CLOSED) return;
+
+    int32_t tmp;
+    __disable_irq();
+    tmp = remain;
+    __enable_irq();
+
+    int32_t enc_raw = STEPx.angle_as56_cur;
+
+    // step -> encoder
+    tmp = (int32_t)(tmp * ENC_PER_STEP);
+
+    if (dir_AS) STEPx.angle_est = enc_raw + tmp;
+    else        STEPx.angle_est = enc_raw - tmp;
+
+    int32_t error_enc = STEPx.angle_as56_tar - STEPx.angle_est;
+    int32_t error_ee  = STEPx.angle_as56_tar - enc_raw;
+
+    /* ===== DONE CHECK (ENCODER THẬT) ===== */
+    if (iabs(error_ee) < 3) {
+        stable_cnt++;
+        if (stable_cnt >= 10) {
+            Status_Step = STEP_DONE;
+            is_enable_step = false;
+            remain = 0;
+            stable_cnt = 0;
+        }
+        return;
+    } else {
+        stable_cnt = 0;
+    }
+
+    /* ===== CONTROL ===== */
+    float error_step = error_enc * STEP_PER_ENC;
+
+    int32_t step_cmd = 0;
+    if (error_step > 1.0f)       step_cmd = 1;
+    else if (error_step < -1.0f) step_cmd = -1;
+    else return;
+
+    bool dir = this->dir_Stepx;
+    if (step_cmd < 0)  dir = !dir;
+    if (!this->dir_AS) dir = !dir;
+
+    dir_step(dir);
+
+    __disable_irq();
+    remain += iabs(step_cmd);
+    __enable_irq();
+
+    is_enable_step = true;
+}
+
+
+
+
+void STEP::STEP_OPENLOOP(){
 	//OPEN LOOP
-	if(this->Status_Step==STEP_RUNNING_1){
-		//QUAY THEO CHIEU DUONG THIEU GOC
-		if (this->STEPx.current_step < this->STEPx.target_step){
-			if(!(this->Flags.flag_set_dir)){
+	if(!Flags.flag_set_chieu_openloop){
+		if(this->Status_Step==STEP_OPEN_LOOP){
+			//QUAY THEO CHIEU DUONG THIEU GOC
+			if (this->STEPx.current_step < this->STEPx.target_step){
 				//THIEU GOC THI QUAY THEO CHIEU DUONG
 				if(this->dir_Stepx) dir_step(true);
 				else dir_step(false);
-				this->Flags.flag_set_dir=true;
 				this->STEPx.Chieuquayhientai=STEP_DUONG;
 				this->is_enable_step=true;
-			}
 
-		}
-		else if (this->STEPx.current_step > this->STEPx.target_step){
-			if(!(this->Flags.flag_set_dir)){
+			}
+			else if (this->STEPx.current_step > this->STEPx.target_step){
+
 				//DU GOC GOC THI QUAY THEO CHIEU AM
 				if(this->dir_Stepx) dir_step(false);
 				else dir_step(true);
-				this->Flags.flag_set_dir=true;
 				this->STEPx.Chieuquayhientai=STEP_AM;
 				this->is_enable_step=true;
+
 			}
+			Flags.flag_set_chieu_openloop=true;
 		}
 	}
-	//DA SET CO STATUS_STEP TRONG ISR
-	else if (this->Status_Step==STEP_RUNNING_2){
-		this->STEPx.angle_cur=this->STEPx.angle_as56_cur;
-		int32_t tmp=this->STEPx.angle_as56_tar-this->STEPx.angle_cur;
-		if (iabs(tmp) <4) {
-			this->Status_Step=STEP_DONE;
-			i=3;
-			return;
-		}
-		//DIR AS LA CHIEU DUONG NEU TMP DUONG NGHIA LA QUAY THIEU
-		if (this->dir_AS){
-			if(tmp > 0){
-				if(this->dir_Stepx) dir_step(true);
-				else dir_step(false);
 
-			}
-			else {
-				if(this->dir_Stepx) dir_step(false);
-				else dir_step(true);
-			}
-
-			i=2;
-		}
-		else{
-		//DIR AS LA CHIEU AM NEN NEU TMP DUONG  LA QUAY DU
-			if(tmp > 0){
-				if(this->dir_Stepx) dir_step(false);
-				else dir_step(true);
-			}
-			else {
-				if(this->dir_Stepx) dir_step(true);
-				else dir_step(false);
-			}
-
-
-			i=1;
-		}
-		this->is_enable_step=true;
-		this->remain=2;
-
-
-	}
 }
 
 
