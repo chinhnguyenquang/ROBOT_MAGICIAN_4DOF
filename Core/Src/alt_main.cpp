@@ -261,7 +261,7 @@ void Sensor_AS5600_RTOS()
             yyy[2] = val3;
         }
 
-        osDelay(3);
+        osDelay(5);
     }
 }
 
@@ -284,91 +284,91 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 
 
 
-void Update_Theta_Robot(uint8_t req){
-	Angle_4_theta=Robot_GetTheta(req);
-}
+void Update_Theta_Robot(uint8_t req){Angle_4_theta=Robot_GetTheta(req);}
+
 uint16_t yui=0;
 uint16_t theta[4];
-
+extern RobotTheta_t QH_QD[POINT_QHQD];
+uint8_t bien_co_set_theta=0;
 void Control_Dwin_get_theta_RTOS(void){
 
-	uint8_t bien_co_set_theta=0;
+
 
     for (;;)
     {
     	if(Angle_4_theta != nullptr){
     		if(bien_co_set_theta==0){
     			_Robot_state=ROBOT_ACTIVE;
-//				_STEP1->STEP_set_Target(88); // GIONG NHU QUI HOACH QUI DAO 1
-//				_STEP2->STEP_set_Target(7);
-//				_STEP3->STEP_set_Target(10);
 
-				_STEP1->STEP_set_target_as(-6238);
-				_STEP2->STEP_set_target_as(3935);
-				_STEP3->STEP_set_target_as(-4512);
+				_STEP1->STEP_set_target_as(QH_QD[0].theta1);
+				_STEP2->STEP_set_target_as(QH_QD[0].theta2);
+				_STEP3->STEP_set_target_as(QH_QD[0].theta3);
 
-				bien_co_set_theta =10;
-    			//bien_co_set_theta=1;
+
+
+				bien_co_set_theta =1;
+
     		}
     		if (bien_co_set_theta==1){
 					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
-						HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_SET);
-//						_STEP1->STEP_set_Target(Angle_4_theta->theta1);
-//						_STEP2->STEP_set_Target(Angle_4_theta->theta2);
-//						_STEP3->STEP_set_Target(Angle_4_theta->theta3);
+						HUT(1);
+						_STEP1->STEP_set_target_as(Angle_4_theta->theta1);
+						//_STEP1->STEP_set_target_as(200);
+						_STEP2->STEP_set_target_as(Angle_4_theta->theta2);
+						_STEP3->STEP_set_target_as(Angle_4_theta->theta3);
 
-						_STEP1->STEP_set_target_as(-6505);
-						_STEP2->STEP_set_target_as(2187);
-						_STEP3->STEP_set_target_as(-2738);
-						theta[0]=Angle_4_theta->theta1;
-						theta[1]=Angle_4_theta->theta2;
-						theta[2]=Angle_4_theta->theta3;
-						theta[3]=Angle_4_theta->theta4;
-						yui=5;
 						bien_co_set_theta=2;
 
 				}
     		}
 
-				if (bien_co_set_theta==2){
-					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+			if (bien_co_set_theta==2){
+				if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
-						osDelay(1000);
+					osDelay(1000);
 
-						_STEP1->STEP_set_target_as(-6236);
-						_STEP2->STEP_set_target_as(3897);
-						_STEP3->STEP_set_target_as(-4457);
+					_STEP1->STEP_set_target_as(QH_QD[0].theta1);
+					_STEP2->STEP_set_target_as(QH_QD[0].theta2);
+					_STEP3->STEP_set_target_as(QH_QD[0].theta3);
 
-						bien_co_set_theta=3;
+					bien_co_set_theta=3;
 
-					}
 				}
-    		    if(bien_co_set_theta==3){
-					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+			}
+			if (bien_co_set_theta==3){
+				if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
-						osDelay(30);
-						_STEP1->STEP_set_target_as(-479);
-						_STEP2->STEP_set_target_as(6472);
-						_STEP3->STEP_set_target_as(-4221);
-						theta[0]=Angle_4_theta->theta1;
-						theta[1]=Angle_4_theta->theta2;
-						theta[2]=Angle_4_theta->theta3;
-						theta[3]=Angle_4_theta->theta4;
-						yui=7;
+//
+						_STEP1->STEP_set_target_as(QH_QD[1].theta1);
+						_STEP2->STEP_set_target_as(QH_QD[1].theta2);
+						_STEP3->STEP_set_target_as(QH_QD[1].theta3);
 
 						bien_co_set_theta=4;
+
+				}
+			}
+    		    if(bien_co_set_theta==4){
+					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
+
+//						osDelay(30);
+						_STEP1->STEP_set_target_as(-1332);
+						_STEP2->STEP_set_target_as(5249);
+						_STEP3->STEP_set_target_as(-3890);
+
+
+						bien_co_set_theta=5;
 							}
     		    		}
-				if(bien_co_set_theta==4){
+				if(bien_co_set_theta==5){
 					if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 						HAL_GPIO_WritePin(GPIOE, GPIO_PIN_6, GPIO_PIN_RESET);
-						bien_co_set_theta=5;
+						bien_co_set_theta=6;
 					}
 
 				}
 
-				if(bien_co_set_theta==5){
+				if(bien_co_set_theta==6){
 
 						Angle_4_theta=nullptr;
 						bien_co_set_theta=0;
@@ -501,15 +501,15 @@ void Control_motor_RTOS(){
 		gttt[1]=_STEP2->STEPx.angle_as56_cur;
 		gttt[2]=_STEP3->STEPx.angle_as56_cur;
 
-		if (_Flag.flag1) _STEP1->STEP_set_home_trigger(); //NEU CO QUAY THEM SE THEM 1 LAN TU CABLI
-		if (_Flag.flag2) _STEP2->STEP_set_home_trigger();
-		if (_Flag.flag3) _STEP3->STEP_set_home_trigger();
+
 
 		if (_Robot_state==ROBOT_SETHOME){
 
 
 				////MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
-
+				if (_Flag.flag1) _STEP1->STEP_set_home_trigger(); //NEU CO QUAY THEM SE THEM 1 LAN TU CABLI
+				if (_Flag.flag2) _STEP2->STEP_set_home_trigger();
+				if (_Flag.flag3) _STEP3->STEP_set_home_trigger();
 
 				if ((_Flag.flag1)&&(_Flag.flag2)&&(_Flag.flag3)) {_Robot_state=ROBOT_IDLE;Flag_cho_set_home=false; }//DUNG IM
 
@@ -601,9 +601,9 @@ int alt_main()
 
 
 	// SET CHIEU CHO STEP /////////////////////////
-	_STEP1->STEP_set_dir_as_step(true,false);
-	_STEP2->STEP_set_dir_as_step(true,true);
-	_STEP3->STEP_set_dir_as_step(false,false);
+	_STEP1->STEP_set_dir_as_step(2885,true,false);
+	_STEP2->STEP_set_dir_as_step(1800,true,true);
+	_STEP3->STEP_set_dir_as_step(3000,false,false);
 
 	//MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 

@@ -52,10 +52,11 @@ void STEP::update_As5600_cur(int32_t value)
 }
 
 
-void STEP::STEP_set_dir_as_step(bool dir,bool dir_As)
+void STEP::STEP_set_dir_as_step(uint16_t a,bool dir,bool dir_As)
 {
 	this->dir_Stepx=dir;
 	this->dir_AS=dir_As;
+	this->STEPx.angle_as56_cal=a;
 }
 
 
@@ -185,29 +186,40 @@ void STEP::update_ISR(){
 #define ENC_TO_STEP(e)   ((int32_t)((int64_t)(e) * 19200 / (4096 * 6)))
 
 void STEP::STEP_set_target_as(int32_t target){
-	this->STEPx.angle_as56_tar=target;
+
 
 	this->STEPx.angle_kc_candat=this->STEPx.angle_as56_init; //TH NGUY HIEM KHI 2 DIEM NAY NAM TAI BIEN
 
+	this->STEPx.angle_kc_candat=this->STEPx.angle_as56_cal-this->STEPx.angle_as56_init;
 
+	this->STEPx.angle_as56_tar=target;//+this->STEPx.angle_kc_candat;
 
 	this->STEPx.current_step=0;
+
+	int32_t bient_target_step_tmp=target;
+	if (target>0){
+		bient_target_step_tmp=target-100;
+	}
+	else {
+		bient_target_step_tmp=target+100;
+	}
+
 	if(!(this->Flags.flag_trang_thaidau_vehome)){
 
 		this->STEPx.angle_as56_cur=0;
 		this->STEPx.angle_cur=0;
 
-		this->STEPx.target_step=iabs((int32_t)(target * 25/32));
+		this->STEPx.target_step=(int32_t)(bient_target_step_tmp * 25/32);
 
-		this->STEPx.target_step=(int32_t)(STEPx.target_step*0.9);
+
 		//this->STEPx.target_step=500;
 		this->Flags.flag_trang_thaidau_vehome=true;
 
 	}
 	else {
 		//TARGET AM HOAC DUONG
-		this->STEPx.target_step=iabs((int32_t)((target-this->STEPx.angle_cur)*25/32));
-		this->STEPx.target_step=(int32_t)(STEPx.target_step*0.9);
+		this->STEPx.target_step=(int32_t)((bient_target_step_tmp-this->STEPx.angle_cur)*25/32);
+
 		//this->STEPx.target_step=500;
 	}
 	this->Status_Step=STEP_OPEN_LOOP;
@@ -222,8 +234,8 @@ void STEP::STEP_set_target_as(int32_t target){
 void STEP::STEP_set_home_trigger(void){
 	this->Flags.flag_trang_thaidau_vehome=false;
 	this->Flags.flag_angle_init=false;
-	//this->is_enable_step=false;
-	//this->STEPx.angle_as56_cur=0;
+	this->is_enable_step=false;
+	this->STEPx.angle_as56_cur=0;
 }
 
 
@@ -258,10 +270,11 @@ void STEP::STEP_CLOSEDLOOP()
     int32_t error_ee  = STEPx.angle_as56_tar - enc_raw;
 
     /* ===== DONE CHECK (ENCODER THẬT) ===== */
-    if (iabs(error_ee) < 3) {
+    if (iabs(error_ee) < 4) {
         stable_cnt++;
-        if (stable_cnt >= 10) {
+        if (stable_cnt >= 20) {
             Status_Step = STEP_DONE;
+            this->STEPx.angle_cur=enc_raw;
             is_enable_step = false;
             remain = 0;
             stable_cnt = 0;
@@ -302,8 +315,15 @@ void STEP::STEP_OPENLOOP(){
 			//QUAY THEO CHIEU DUONG THIEU GOC
 			if (this->STEPx.current_step < this->STEPx.target_step){
 				//THIEU GOC THI QUAY THEO CHIEU DUONG
-				if(this->dir_Stepx) dir_step(true);
-				else dir_step(false);
+				if (this->dir_AS){
+					if(this->dir_Stepx) dir_step(true);
+					else dir_step(false);
+				}
+				else {
+					if(this->dir_Stepx) dir_step(false);
+					else dir_step(true);
+				}
+
 				this->STEPx.Chieuquayhientai=STEP_DUONG;
 				this->is_enable_step=true;
 
@@ -311,8 +331,15 @@ void STEP::STEP_OPENLOOP(){
 			else if (this->STEPx.current_step > this->STEPx.target_step){
 
 				//DU GOC GOC THI QUAY THEO CHIEU AM
-				if(this->dir_Stepx) dir_step(false);
-				else dir_step(true);
+				if (this->dir_AS){
+					if(this->dir_Stepx) dir_step(false);
+					else dir_step(true);
+				}
+				else {
+					if(this->dir_Stepx) dir_step(true);
+					else dir_step(false);
+				}
+
 				this->STEPx.Chieuquayhientai=STEP_AM;
 				this->is_enable_step=true;
 

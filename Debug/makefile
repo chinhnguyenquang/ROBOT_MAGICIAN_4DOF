@@ -67,34 +67,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := Robot_v3
+BUILD_ARTIFACT_NAME := ROBOTV3_28
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-Robot_v3.elf \
+ROBOTV3_28.elf \
 
 MAP_FILES += \
-Robot_v3.map \
+ROBOTV3_28.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-Robot_v3.list \
+ROBOTV3_28.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: Robot_v3.elf secondary-outputs
+main-build: ROBOTV3_28.elf secondary-outputs
 
 # Tool invocations
-Robot_v3.elf Robot_v3.map: $(OBJS) $(USER_OBJS) D:\DO_AN_ROBOT\codev2\v3\STM32F407VETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "Robot_v3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\DO_AN_ROBOT\codev2\v3\STM32F407VETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Robot_v3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+ROBOTV3_28.elf ROBOTV3_28.map: $(OBJS) $(USER_OBJS) D:\DO_AN_ROBOT\codev2\v3\STM32F407VETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "ROBOTV3_28.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"D:\DO_AN_ROBOT\codev2\v3\STM32F407VETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ROBOTV3_28.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -103,14 +103,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Robot_v3.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Robot_v3.list"
+ROBOTV3_28.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "ROBOTV3_28.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) Robot_v3.elf Robot_v3.list Robot_v3.map default.size.stdout
+	-$(RM) ROBOTV3_28.elf ROBOTV3_28.list ROBOTV3_28.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

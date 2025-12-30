@@ -177,7 +177,7 @@ public:
 	 friend void Control_Dwin_get_theta_RTOS();
 	 friend void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
-	 void STEP_set_dir_as_step(bool dir,bool dir_As); //chon chieu true (set) chieu cua encoder (false)
+	 void STEP_set_dir_as_step(uint16_t a,bool dir,bool dir_As); //chon chieu true (set) chieu cua encoder (false)
 	 void STEP_set_home_trigger(void);
 
 	 void STEP_CLOSEDLOOP();
