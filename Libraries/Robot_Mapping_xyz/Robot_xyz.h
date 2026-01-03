@@ -20,7 +20,7 @@ extern "C"
 
 /* ================== CONSTANT ================== */
 #define ROBOT_MAX_BIT   37
-#define POINT_QHQD 5
+#define POINT_QHQD 7
 
 /* ================== TYPE DEFINITIONS ================== */
 

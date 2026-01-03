@@ -296,13 +296,14 @@ void Control_Dwin_get_theta_RTOS(void){
 
     for (;;)
     {
+    	int i=0;
     	if(Angle_4_theta != nullptr){
     		if(bien_co_set_theta==0){
     			_Robot_state=ROBOT_ACTIVE;
-
-				_STEP1->STEP_set_target_as(QH_QD[0].theta1);
-				_STEP2->STEP_set_target_as(QH_QD[0].theta2);
-				_STEP3->STEP_set_target_as(QH_QD[0].theta3);
+    			i=Angle_4_theta->theta4;
+				_STEP1->STEP_set_target_as(QH_QD[i].theta1);
+				_STEP2->STEP_set_target_as(QH_QD[i].theta2);
+				_STEP3->STEP_set_target_as(QH_QD[i].theta3);
 
 
 
@@ -314,7 +315,6 @@ void Control_Dwin_get_theta_RTOS(void){
 
 						HUT(1);
 						_STEP1->STEP_set_target_as(Angle_4_theta->theta1);
-						//_STEP1->STEP_set_target_as(200);
 						_STEP2->STEP_set_target_as(Angle_4_theta->theta2);
 						_STEP3->STEP_set_target_as(Angle_4_theta->theta3);
 
@@ -327,10 +327,10 @@ void Control_Dwin_get_theta_RTOS(void){
 				if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
 					osDelay(1000);
-
-					_STEP1->STEP_set_target_as(QH_QD[0].theta1);
-					_STEP2->STEP_set_target_as(QH_QD[0].theta2);
-					_STEP3->STEP_set_target_as(QH_QD[0].theta3);
+					i=Angle_4_theta->theta4;
+					_STEP1->STEP_set_target_as(QH_QD[i].theta1);
+					_STEP2->STEP_set_target_as(QH_QD[i].theta2);
+					_STEP3->STEP_set_target_as(QH_QD[i].theta3);
 
 					bien_co_set_theta=3;
 
@@ -340,9 +340,9 @@ void Control_Dwin_get_theta_RTOS(void){
 				if ((_STEP1->Status_Step==STEP_DONE)&&(_STEP2->Status_Step==STEP_DONE)&&(_STEP3->Status_Step==STEP_DONE)){
 
 //
-						_STEP1->STEP_set_target_as(QH_QD[1].theta1);
-						_STEP2->STEP_set_target_as(QH_QD[1].theta2);
-						_STEP3->STEP_set_target_as(QH_QD[1].theta3);
+						_STEP1->STEP_set_target_as(QH_QD[6].theta1);
+						_STEP2->STEP_set_target_as(QH_QD[6].theta2);
+						_STEP3->STEP_set_target_as(QH_QD[6].theta3);
 
 						bien_co_set_theta=4;
 

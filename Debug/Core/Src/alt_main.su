@@ -8,7 +8,7 @@ D:/DO_AN_ROBOT/codev2/v3/Libraries/STEP_MOTOR/STEP.h:109:2:STEP::STEP(uint8_t, u
 ../Core/Src/alt_main.cpp:227:6:void Sensor_AS5600_RTOS()	40	static
 ../Core/Src/alt_main.cpp:272:6:void HAL_UART_TxCpltCallback(UART_HandleTypeDef*)	24	static,ignoring_inline_asm
 ../Core/Src/alt_main.cpp:287:6:void Update_Theta_Robot(uint8_t)	16	static
-../Core/Src/alt_main.cpp:293:6:void Control_Dwin_get_theta_RTOS()	8	static
+../Core/Src/alt_main.cpp:293:6:void Control_Dwin_get_theta_RTOS()	16	static
 ../Core/Src/alt_main.cpp:395:6:void DwinUsartTask_RTOS()	16	static
 ../Core/Src/alt_main.cpp:422:6:void Dwin_RTOS()	40	static
 ../Core/Src/alt_main.cpp:472:6:void TIM2_CALLBACK_STEP()	8	static
